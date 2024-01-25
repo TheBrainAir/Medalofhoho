@@ -10,6 +10,57 @@ function formatNumber(num) {
     }
 }
 
+function fetchData() {
+    fetch('/api/data')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            var depositAmountElement = document.querySelector('.values-sidebar2 p.deposit-amount');
+
+            if (depositAmountElement) {
+                depositAmountElement.innerText = formatNumber(data.deposit_amount) + '₽';
+            } else {
+                console.error('Element deposit_amount not found.');
+            }
+
+            // Оставляем обновление других значений без изменений
+            var editedElement = document.querySelector('.values-sidebar3 p.edited-created');
+            var totalReceivedElement = document.querySelector('.values-sidebar1 p.total-received');
+
+            if (editedElement && totalReceivedElement) {
+                editedElement.innerText = data.edited + '/' + data.created;
+                totalReceivedElement.innerText = data.total_received + '₽';
+            } else {
+                console.error('One or more elements not found.');
+            }
+
+            var scrollingList = document.getElementById('scrollingList');
+            scrollingList.innerHTML = '';
+
+            data.slot_names.forEach(function (slot, index) {
+                var listItem = document.createElement('li');
+                listItem.className = 'item';
+                listItem.innerHTML = `<span>${index + 1} ${slot}</span> <span>${data.purchase_costs[index].toLocaleString('en-US')}</span> <span>${data.received_per_slot[index].toLocaleString('en-US')}</span>`;
+                scrollingList.appendChild(listItem);
+            });
+
+            console.log('Данные успешно получены и обновлены:', data);
+        })
+        .catch(error => console.error('Ошибка загрузки данных:', error));
+}
+
+window.addEventListener('load', function () {
+fetchData();
+setInterval(fetchData, 6000);
+var listContainer = document.getElementById('listContainer');
+var scrollingList = document.getElementById('scrollingList');
+})
+
+
 function submitTheme() {
     var selectedTheme = document.getElementById('theme-selector').value;
     console.log('Selected theme:', selectedTheme);
@@ -37,49 +88,11 @@ function submitTheme() {
 // Example using fetch API
 fetch('/login', {
     method: 'POST',
-    // Other request options
 })
 .then(response => response.json())
 .then(data => console.log(data))
 .catch(error => console.error('Error:', error));
 
-
-function fetchData() {
-    fetch('/api/data')
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
-        .then(data => {
-            // Обновите элементы DOM здесь, используя полученные данные
-            // Например:
-            document.querySelector('.deposit-amount').innerText = formatNumber(data.deposit_amount) + '₽';
-            document.querySelector('.edited-created').innerText = data.edited + '/' + data.created;
-            document.querySelector('.total-received').innerText = formatNumber(data.total_received) + '₽';
-            // А также обновить список слотов в случае его изменения
-            // ...
-        })
-        .catch(error => console.error('Error fetching data:', error));
-}
-
-window.addEventListener('load', function () {
-fetchData();
-setInterval(fetchData, 6000);
-var listContainer = document.getElementById('listContainer');
-var scrollingList = document.getElementById('scrollingList');
-
-function updateList(data) {
-    var scrollingList = document.getElementById('scrollingList');
-    scrollingList.innerHTML = '';
-
-    data.slot_names.forEach(function (slot, index) {
-        var listItem = document.createElement('li');
-        listItem.className = 'item';
-        listItem.innerHTML = `<span>${index + 1} ${slot}</span> <span>${data.purchase_costs[index].toLocaleString('en-US')}</span> <span>= ${data.received_per_slot[index].toLocaleString('en-US')}</span>`;
-        scrollingList.appendChild(listItem);
-    });
 
 function checkOverflow() {
 var isOverflowing = scrollingList.offsetHeight > listContainer.offsetHeight;
